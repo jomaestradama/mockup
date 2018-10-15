@@ -12,7 +12,38 @@
 */
 
 use App\Task;
+use App\Mock;
+use App\MocksPhoto;
 use Illuminate\Http\Request;
+
+Route::get('/upload', 'UploadController@uploadForm');
+Route::post('/upload', function (Request $request) {
+    $validator = Validator::make($request->all(), [
+        'cuenta' => 'required|max:255',
+        'photo' => 'image|mimes:jpeg,bmp,png|size:2000'
+    ]);
+
+    if ($validator->fails()) {
+        return redirect('/upload')
+            ->withInput()
+            ->withErrors($validator);
+    }
+
+    $mock = Mock::create();
+    $photo = MocksPhoto::create();
+    $mock->cuenta = $request->cuenta;
+    $mock->save();
+    foreach ($request->photos as $photo) {
+        $filename = $photo->store('photos');
+        MocksPhoto::create([
+            'mock_id' => $mock->id,
+            'filename' => $filename
+        ]);
+    }
+  
+
+    return redirect('/upload');
+});
 
 Route::group(['middleware' => ['web']], function () {
     /**
